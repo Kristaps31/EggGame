@@ -184,6 +184,7 @@ window.addEventListener('load', function(){
                 }
             });
             if (this.hatchTimer > this.hatchInterval){
+                this.game.hatchings.push(new Larva(this.game, this.collisionX, this.collisionY));
                 this.markedForDeletion = true;
                 this.game.removeGameObjects();
             } else {
@@ -205,15 +206,28 @@ window.addEventListener('load', function(){
             this.height = this.spriteHeight;
             this.spriteX;
             this.spriteY;
-
+            this.speedY = 1 + Math.random();
         }
         draw(context){
-            context.drawImage(this.image, this.spriteX, this.spriteY);
+            context.drawImage(this.image, 0, 0, this.spriteWidth, this.spriteHeight, this.spriteX, this.spriteY, this.width, this.height);
+            if( this.game.debug){
+                context.beginPath();
+                context.arc(this.collisionX, this.collisionY, this.collisionRadius, 0, Math.PI * 2);
+                context.save();
+                context.globalAlpha = 0.5;
+                context.fill();
+                context.restore();
+                context.stroke();
+            };
         }
         update(){
             this.collisionY -= this.speedY;
             this.spriteX = this.collisionX - this.width * 0.5;
-            this.spriteY = this.collisionY - this.height * 0.5;
+            this.spriteY = this.collisionY - this.height * 0.5 - 50;
+            if (this.collisionY < this.game.topMargin){
+                this.markedForDeletion = true;
+                this.game.removeGameObjects();
+            }
         }
     }
 
@@ -283,6 +297,7 @@ window.addEventListener('load', function(){
             this.obstacles = [];
             this.eggs = [];
             this.enemies = [];
+            this.hatchings = [];
             this.gameObjects = [];
             this.mouse = {
                 x: this.width * 0.5,
@@ -313,7 +328,7 @@ window.addEventListener('load', function(){
         render(context, deltaTime){
             if (this.timer > this.interval){
                 context.clearRect(0, 0, this.width, this.height);
-                this.gameObjects = [...this.eggs, ...this.obstacles, this.player, ...this.enemies];
+                this.gameObjects = [...this.eggs, ...this.obstacles, this.player, ...this.enemies, ...this.hatchings];
                 this.gameObjects.sort((a, b) => {
                     return a.collisionY - b.collisionY;
                 })
@@ -347,6 +362,7 @@ window.addEventListener('load', function(){
         }
         removeGameObjects(){
             this.eggs = this.eggs.filter(object => !object.markedForDeletion);
+            this.hatchings = this.hatchings.filter(object => !object.markedForDeletion);
         }
         init(){
             for (let i = 0; i < 3; i++){
