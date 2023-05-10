@@ -373,6 +373,14 @@ window.addEventListener('load', function(){
             } else {
                 this.eggTimer += deltaTime;
             }
+
+            //draw status text
+            context.save();
+            context.textAlign = "left";
+            context.fillText("Score: " + this.score, 25, 50);
+            if (this.debug){
+                context.fillText("lost: " + this.lostHatchings, 25, 100);
+            }
         }
         checkCollision(a,b){
             const dx = a.collisionX - b.collisionX;
