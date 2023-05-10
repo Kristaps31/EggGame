@@ -207,9 +207,11 @@ window.addEventListener('load', function(){
             this.spriteX;
             this.spriteY;
             this.speedY = 1 + Math.random();
+            this.frameX = 0;
+            this.frameY = Math.floor(Math.random() * 2);
         }
         draw(context){
-            context.drawImage(this.image, 0, 0, this.spriteWidth, this.spriteHeight, this.spriteX, this.spriteY, this.width, this.height);
+            context.drawImage(this.image, this.frameX * this.spriteWidth, this.frameY * this.spriteHeight, this.spriteWidth, this.spriteHeight, this.spriteX, this.spriteY, this.width, this.height);
             if( this.game.debug){
                 context.beginPath();
                 context.arc(this.collisionX, this.collisionY, this.collisionRadius, 0, Math.PI * 2);
@@ -224,12 +226,35 @@ window.addEventListener('load', function(){
             this.collisionY -= this.speedY;
             this.spriteX = this.collisionX - this.width * 0.5;
             this.spriteY = this.collisionY - this.height * 0.5 - 50;
+
+            //move to safety
             if (this.collisionY < this.game.topMargin){
                 this.markedForDeletion = true;
                 this.game.removeGameObjects();
+                this.game.score++;
             }
-        }
+
+            //collision with objects
+            let collisionObjects = [this.game.player, ...this.game.obstacles];
+            collisionObjects.forEach(object => {
+                let [collision, distance, sumOfRadii, dx, dy] = this.game.checkCollision(this, object);
+                if (collision){
+                    const unit_x = dx / distance;
+                    const unit_y = dy / distance;
+                    this.collisionX = object.collisionX + (sumOfRadii + 1) * unit_x;
+                    this.collisionY = object.collisionY + (sumOfRadii + 1) * unit_y;
+                }
+        });
+        // collision with enemy
+        this.game.enemies.forEach(enemy => {
+            if (this.game.checkCollision(this, enemy)[0]){
+                this.markedForDeletion = true;
+                this.game.removeGameObjects();
+                this.game.lostHatchings++;
+            }
+        });
     }
+}
 
     class Enemy {
         constructor(game){
@@ -299,6 +324,8 @@ window.addEventListener('load', function(){
             this.enemies = [];
             this.hatchings = [];
             this.gameObjects = [];
+            this.score = 0;
+            this.lostHatchings = 0;
             this.mouse = {
                 x: this.width * 0.5,
                 y: this.height * 0.5,
